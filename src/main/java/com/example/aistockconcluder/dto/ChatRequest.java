@@ -22,7 +22,6 @@ import java.util.Map;
 public class ChatRequest {
 
     //Data fields
-
     @JsonProperty("model")
     private String model;
 
