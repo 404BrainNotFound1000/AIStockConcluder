@@ -1,6 +1,8 @@
 package com.example.aistockconcluder.controller;
 
+import com.example.aistockconcluder.configuration.webClientConfig;
 import com.example.aistockconcluder.dto.*;
+import com.example.aistockconcluder.service.AlphaVantageAPIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -18,15 +20,16 @@ import java.util.Map;
 public class ChatGptController {
 
     private final WebClient webClient;
-
-    @Autowired
-    public ChatGptController(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("https://api.openai.com/v1/chat/completions").build();
-    }
+    private final AlphaVantageAPIService alphaVantageAPIService;
 
     @Value("${openai.api.key}")
     private String openapikey;
 
+    @Autowired
+    public ChatGptController(WebClient.Builder webClientBuilder, AlphaVantageAPIService alphaVantageAPIService) {
+        this.webClient = webClientBuilder.baseUrl("https://api.openai.com/v1/chat/completions").build();
+        this.alphaVantageAPIService = alphaVantageAPIService;
+    }
 
     @GetMapping("/hej")
     public String hej() {
@@ -34,24 +37,47 @@ public class ChatGptController {
     }
 
     @GetMapping("/chat")
+    //@RequestParam, is used to extract the query String message from the request?(At the call of this method, there is made an independent request.
+    //Map<String, Object is used to store WHAT?
     public Map<String, Object> chatWithGpt(@RequestParam String message) {
         ChatRequest chatRequest = new ChatRequest();
+        AlphaVantageResponse alphaVantageResponse = new AlphaVantageResponse();
         chatRequest.setModel("gpt-3.5-turbo");
         List<Message> lstMessage = new ArrayList<>();
-        lstMessage.add(new Message("system", "You are a helpful assistan."));
+        lstMessage.add(new Message("system", "You are a helpful assistant."));
         lstMessage.add(new Message("user", "Where is " + message + "?"));
+        lstMessage.add(new Message("user", "What is the global sentiment today in the stock market?"));
+
+        AlphaVantageResponse responseJSON = alphaVantageAPIService.getStatusMarketGlobal();
+        String responseString = responseJSON.toString();
+        lstMessage.add(new Message("system", responseString));
+
         chatRequest.setMessages(lstMessage);
         chatRequest.setN(3);
         chatRequest.setTemperature(1);
-        chatRequest.setMaxTokens(200);
+        chatRequest.setMaxTokens(10);
         chatRequest.setStream(false);
-        chatRequest.setPresencePenalty(1);
+        chatRequest.setPresencePenalty(0);
+
+        //Several actions are started and completed with return values in this part of the method:
+        //Returns a ChatResponse(instead of just assigning it to a variable for 'internal processing'), as Spring expects an outpout to serialize, to be sent over HTTP. A design, is to have the method return chatResponse in the same scope, in which attributes of the chatResponse can be extracted from.
+
+        //Description of methods:
+        //post(), initializes the building of the HTTP request, to the base URL defined in the autowired bean dependency webClient.
+        //contentType(MediaType.APPLICAITION.JSON), sets the Content-Type header in the HTTP request, which the server can read, and understand, that this request sends content in JSON.
+        //headers(h -> h.setBearerAuth(openapikey)), adds a header: Authentication: Bearer <key>, for authentication.
+        //bodyToValue(), serializes a specific object into a JSON format, which Jackson does, for the request body.
+        //retrieve(), actually performs the request, and sends it, AND, prepares to read the response, with basic error handling.
+        //bodyToMono(Object.class), ''tells Spring'', to take the JSON from the RESPONSE body, and deserialize it into a compatible class, namely ChatResponse, in this case, wrapped om a reactive Mono class.
+        //block(), converts the asynchronous Mono, into a concrete ChatResponse object "by waiting for the result so you can use it synchronously in your code."(ChatGPT)
 
         ChatResponse chatResponse = webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .headers(h-> h.setBearerAuth(openapikey))
+                //Chatrequest med messages til OpenAI API, og attributværdier.
                 .bodyValue(chatRequest)
                 .retrieve()
+                //bodyToMono() ''tells spring'' to deserialize the HTTP response, into a ChatResponse class. In other words, it manages to find the JSON variable name, and convert it into the predefined Java variables, via the JSON Schema.
                 .bodyToMono(ChatResponse.class)
                 .block();
 
@@ -61,8 +87,8 @@ public class ChatGptController {
         Map<String, Object> map = new HashMap<>();
         map.put("Usage", usg);
         map.put("Choices", lst);
+        //map, is what is to be serialized to JSON.
         return map;
     }
-
 
 }
