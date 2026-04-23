@@ -39,23 +39,25 @@ public class ChatGptController {
     @GetMapping("/chat")
     //@RequestParam, is used to extract the query String message from the request?(At the call of this method, there is made an independent request.
     //Map<String, Object is used to store WHAT?
-    public Map<String, Object> chatWithGpt(@RequestParam String message) {
+
+    //For adding user input, in a method parameter in this controller method, add @RequestParam
+    public Map<String, Object> chatWithGpt() {
         ChatRequest chatRequest = new ChatRequest();
         AlphaVantageResponse alphaVantageResponse = new AlphaVantageResponse();
         chatRequest.setModel("gpt-3.5-turbo");
         List<Message> lstMessage = new ArrayList<>();
-        lstMessage.add(new Message("system", "You are a helpful assistant."));
-        lstMessage.add(new Message("user", "Where is " + message + "?"));
-        lstMessage.add(new Message("user", "What is the global sentiment today in the stock market?"));
+        lstMessage.add(new Message("system", "Firstly, please write which major stock exchanges are open, from what you receive from me. Lastly, please respond in academic terms, on the status of global stock exchanges, and add general info, such as regular hours having the most trading volume, and other trivial info about the stock exchanges."));
+        lstMessage.add(new Message("user", "What are major stock exchanges?"));
 
         AlphaVantageResponse responseJSON = alphaVantageAPIService.getStatusMarketGlobal();
+        //Or use StringBuilder
         String responseString = responseJSON.toString();
         lstMessage.add(new Message("system", responseString));
 
         chatRequest.setMessages(lstMessage);
-        chatRequest.setN(3);
+        chatRequest.setN(1);
         chatRequest.setTemperature(1);
-        chatRequest.setMaxTokens(10);
+        chatRequest.setMaxTokens(200);
         chatRequest.setStream(false);
         chatRequest.setPresencePenalty(0);
 
