@@ -8,6 +8,12 @@ This application, provides a service to the
 
 ## WebClient 
 
+
+
+
+
+
+
 # Jackson 
 
 Jackson project repository: https://github.com/FasterXML/jackson
@@ -45,9 +51,16 @@ between different services of this application, and the APIs of AlphaVantage API
 
 In this application, all dto classes are located in the 'dto' folder. 
 
+## config class 
+
+Config class: configuation.WebClientConfig
+This configuration class contains a declaration of a WebClient class a bean. It has no baseURL defined, as its purpose is 
+to have a factory ready bean of WebClient ready, that can be set with additional properties such as base URL, and api key credential
+values. This takes place in the instantiation this bean via constructor injection in the classes that have a need to 
+create HTTP requests to a specific third party API.
 
 # Flow(s) of the application
-
+...
 
 
 ####
