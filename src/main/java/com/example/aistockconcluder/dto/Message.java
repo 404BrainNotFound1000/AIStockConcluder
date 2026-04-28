@@ -21,15 +21,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "annotations"
 })
 
-//ERROR: You misunderstood this class as being the response from the OpenAI API?
-
-//This class, Message, and its attributes, represent the structure of the request, or response from the OpenAI API. Firstly, they exist primarily to be serialized to JSON, and deserialized from JSON, to Java objects.
+//This class, Message, and its attributes, represent the structure of the request, or response from the OpenAI API. Firstly, they exist primarily to be serialized to JSON.
 @Generated("jsonschema2pojo")
 public class Message {
 
     @JsonProperty("role")
     private String role;
-//The key component of the whol API interaction.THE PAYLOAD! The actual data being sent to this application. This exists as a String in the application, deserialized from JSON.
     @JsonProperty("content")
     private String content;
 //Holds structured information on a refusal from the OpenAI API, to provide a response. This is written in a [] structure, which can be mapped to an object in the application. The type Object is used, as the schema allows flexibility in formats used for this property.

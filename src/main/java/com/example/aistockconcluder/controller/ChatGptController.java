@@ -35,9 +35,6 @@ public class ChatGptController {
     }
 
     @GetMapping("/chat")
-    //@RequestParam, is used to extract the query String message from the request?(At the call of this method, there is made an independent request.
-    //Map<String, Object is used to store WHAT?
-
     //For adding user input, in a method parameter in this controller method, add @RequestParam
     public Map<String, Object> chatWithGpt() {
         ChatRequest chatRequest = new ChatRequest();
@@ -45,7 +42,7 @@ public class ChatGptController {
         chatRequest.setModel("gpt-3.5-turbo");
         List<Message> lstMessage = new ArrayList<>();
         lstMessage.add(new Message("system", "Firstly, please write which major stock exchanges are open, from what you receive from me. Lastly, please respond in academic terms, on the status of global stock exchanges, and add general info, such as regular hours having the most trading volume, and other trivial info about the stock exchanges."));
-        lstMessage.add(new Message("user", "What are major stock exchanges?"));
+        lstMessage.add(new Message("user", "What are major stock exchanges, and which are open right now, seeing it from time UTC+1?"));
 
         AlphaVantageResponse responseJSON = alphaVantageAPIService.getStatusMarketGlobal();
         //Or use StringBuilder
@@ -63,21 +60,13 @@ public class ChatGptController {
         //Returns a ChatResponse(instead of just assigning it to a variable for 'internal processing'), as Spring expects an outpout to serialize, to be sent over HTTP. A design, is to have the method return chatResponse in the same scope, in which attributes of the chatResponse can be extracted from.
 
         //Description of methods:
-        //post(), initializes the building of the HTTP request, to the base URL defined in the autowired bean dependency webClient.
-        //contentType(MediaType.APPLICAITION.JSON), sets the Content-Type header in the HTTP request, which the server can read, and understand, that this request sends content in JSON.
         //headers(h -> h.setBearerAuth(openapikey)), adds a header: Authentication: Bearer <key>, for authentication.
-        //bodyToValue(), serializes a specific object into a JSON format, which Jackson does, for the request body.
-        //retrieve(), actually performs the request, and sends it, AND, prepares to read the response, with basic error handling.
-        //bodyToMono(Object.class), ''tells Spring'', to take the JSON from the RESPONSE body, and deserialize it into a compatible class, namely ChatResponse, in this case, wrapped om a reactive Mono class.
-        //block(), converts the asynchronous Mono, into a concrete ChatResponse object "by waiting for the result so you can use it synchronously in your code."(ChatGPT)
 
         ChatResponse chatResponse = webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .headers(h-> h.setBearerAuth(openapikey))
-                //Chatrequest med messages til OpenAI API, og attributværdier.
                 .bodyValue(chatRequest)
                 .retrieve()
-                //bodyToMono() ''tells spring'' to deserialize the HTTP response, into a ChatResponse class. In other words, it manages to find the JSON variable name, and convert it into the predefined Java variables, via the JSON Schema.
                 .bodyToMono(ChatResponse.class)
                 .block();
 
@@ -87,7 +76,6 @@ public class ChatGptController {
         Map<String, Object> map = new HashMap<>();
         map.put("Usage", usg);
         map.put("Choices", lst);
-        //map, is what is to be serialized to JSON.
         return map;
     }
 
